@@ -1,0 +1,24 @@
+# Ignore contents of app config directories but keep the directories themselves
+dockerConfigs/lidarr/*
+!dockerConfigs/lidarr/.gitkeep
+
+dockerConfigs/prowlarr/*
+!dockerConfigs/prowlarr/.gitkeep
+
+dockerConfigs/radarr/*
+!dockerConfigs/radarr/.gitkeep
+
+dockerConfigs/sonarr/*
+!dockerConfigs/sonarr/.gitkeep
+
+dockerConfigs/nginx-proxy-manager/*
+!dockerConfigs/nginx-proxy-manager/.gitkeep
+
+# Homer - ignore everything except config.yml
+dockerConfigs/homer/*
+!dockerConfigs/homer/.gitkeep
+!dockerConfigs/homer/config.yml
+
+# Ignore common files
+.DS_Store
+*.log 

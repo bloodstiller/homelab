@@ -1,0 +1,113 @@
+services:
+  - name: "TV & Movies"
+    items:
+      - name: "Plex"
+        logo: "assets/png/plex.png"
+        subtitle: "Watch Movies & TV"
+        tag: "media"
+        url: "http://192.168.2.12:32400/web/index.html#!/"
+        target: "_blank"
+
+      - name: "Radarr"
+        logo: "assets/png/radarr.png"
+        subtitle: "Add Movies"
+        tag: "media"
+        url: "http://192.168.2.151:7878"
+        target: "_blank"
+
+      - name: "Sonarr"
+        logo: "assets/png/sonarr.png"
+        subtitle: "Add TV"
+        tag: "media"
+        url: "http://192.168.2.151:8989"
+        target: "_blank"
+
+  - name: "Infrastructure"
+    items:
+      - name: "Router"
+        logo: "assets/png/asus-router.png"
+        subtitle: "Asus Router"
+        tag: "management"
+        url: "http://192.168.2.1/Main_Login.asp"
+        target: "_blank"
+
+      - name: "Truenas"
+        logo: "assets/png/truenas-scale.png"
+        subtitle: "Manage Truenas"
+        tag: "management"
+        url: "https://192.168.2.12:4443/ui/sessions/signin"
+        target: "_blank"
+
+      - name: "Proxmox PVE1"
+        logo: "assets/png/proxmox.png"
+        subtitle: "PVE1"
+        tag: "management"
+        url: "https://192.168.2.178:8006"
+        target: "_blank"
+
+      - name: "Proxmox PVE2"
+        logo: "assets/png/proxmox.png"
+        subtitle: "PVE2"
+        tag: "management"
+        url: "https://192.168.2.175:8006"
+        target: "_blank"
+
+      - name: "Pihole"
+        #logo: "assets/png/proxmox.png"
+        subtitle: "Pihole"
+        tag: "management"
+        url: "http://192.168.2.136/admin"
+        target: "_blank"
+
+  - name: "Downloads"
+    items:
+      - name: "Qbitorrent"
+        logo: "assets/png/qbittorrent.png"
+        subtitle: "Download Client"
+        tag: "Downloads"
+        url: "http://192.168.2.12:10095/"
+        target: "_blank"
+
+  - name: "Music"
+    items:
+      - name: "lidarr"
+        logo: "assets/png/lidarr.png"
+        subtitle: "Listen to music"
+        tag: "music"
+        url: "http://192.168.2.151:8686/"
+        target: "_blank"
+
+
+  - name: "Useful"
+    items:
+      - name: "WhatsApp"
+        logo: "assets/png/whatsapp.png"
+        subtitle: "Talk"
+        tag: "Useful"
+        url: "https://web.whatsapp.com/"
+        target: "_blank"
+
+      - name: "Amazon"
+        logo: "assets/png/amazon.png"
+        subtitle: "Buy"
+        tag: "Useful"
+        url: "https://www.amazon.co.uk/"
+        target: "_blank"
+
+      - name: "GitHub"
+        logo: "assets/png/github.png"
+        subtitle: "push"
+        tag: "Useful"
+        url: "https://github.com/"
+        target: "_blank"
+defaults:
+  layout: list # Either 'columns', or 'list'
+  colorTheme: dark # One of 'auto', 'light', or 'dark'
+
+# Will load Dracula theme.
+stylesheet:
+  - "assets/custom.css"
+footer: false
+
+connectivityCheck: true # whether you want to display a message when the apps are not accessible anymore (VPN disconnected for example).
+                        # You should set it to true when using an authentication proxy, it also reloads the page when a redirection is detected when checking connectivity.

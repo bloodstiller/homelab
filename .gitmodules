@@ -1,0 +1,3 @@
+[submodule "dashboard-icons"]
+	path = dashboard-icons
+	url = git@github.com-personal:homarr-labs/dashboard-icons.git
