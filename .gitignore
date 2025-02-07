@@ -18,6 +18,8 @@ dockerConfigs/nginx-proxy-manager/*
 dockerConfigs/homer/*
 !dockerConfigs/homer/.gitkeep
 !dockerConfigs/homer/config.yml
+!dockerConfigs/homer/custom.css
+!dockerConfigs/homer/dracula-background.png
 
 # Ignore common files
 .DS_Store

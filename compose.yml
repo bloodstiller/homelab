@@ -87,7 +87,10 @@ services:
     container_name: homer
     volumes:
       - ./dockerConfigs/homer/config.yml:/www/assets/config.yml #Config file
+      - ./dockerConfigs/homer/custom.css:/www/assets/custom.css #Custom CSS
+      - ./dockerConfigs/homer/dracula-background.png:/www/assets/dracula-background.png #Dracula Background
       - ./submodules/dashboard-icons/png:/www/assets/png #Icons
+
     ports:
       - 8080:8080
     user: 1000:1000 # default
