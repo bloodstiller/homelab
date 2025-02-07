@@ -12,6 +12,7 @@ This repository contains the configuration files for my personal homelab setup, 
 
 ### Dashboard
 - **Homer** (Port 8080) - A modern and minimalist dashboard
+- More information further down in the README
 
 ## Container Images
 
@@ -58,5 +59,50 @@ The required directory structure will be created automatically:
 ## Commented Services
 - **FlareSolverr** - Currently commented out in the compose file, can be enabled if needed for handling challenging websites
 
-## Dashboard Configuration
+## Dashboard Configuration (Homer)
 Homer dashboard is configured via `dockerConfigs/homer/config.yml` and uses icons from the [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) submodule.
+
+### Service Groups
+
+1. **TV & Movies**
+   - Plex - Media streaming server
+   - Radarr - Movie management
+   - Sonarr - TV Show management
+
+2. **Networking**
+   - Asus Router - Network management
+   - Pihole (x2) - DNS and ad blocking
+   - Nginx Proxy Manager - Reverse proxy management
+
+3. **Storage/NAS**
+   - TrueNAS Scale - Storage management interface
+
+4. **Proxmox**
+   - PVE1 & PVE2 - Virtualization servers
+   - Proxmox Backup Server - Backup management
+
+5. **Downloads**
+   - qBittorrent - Download client
+   - Prowlarr - Indexer management
+
+6. **Music**
+   - Lidarr - Music collection management
+
+7. **Proton**
+   - Proton Mail
+   - Proton Calendar
+
+8. **Useful Links**
+   - WhatsApp Web
+   - Amazon
+   - GitHub
+
+### Theme Configuration
+- Layout: List view
+- Color Theme: Dark mode
+- Custom stylesheet enabled
+- Footer: Disabled
+- Connectivity Check: Enabled
+
+### Access
+The dashboard is accessible on port 8080 and provides quick access to all homelab services through a clean, organized interface.

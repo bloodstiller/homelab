@@ -5,32 +5,55 @@ services:
         logo: "assets/png/plex.png"
         subtitle: "Watch Movies & TV"
         tag: "media"
-        url: "http://192.168.2.12:32400/web/index.html#!/"
+        url: "http://plex.home.arpa"
         target: "_blank"
 
       - name: "Radarr"
         logo: "assets/png/radarr.png"
         subtitle: "Add Movies"
         tag: "media"
-        url: "http://192.168.2.151:7878"
+        url: "http://radarr.home.arpa"
         target: "_blank"
 
       - name: "Sonarr"
         logo: "assets/png/sonarr.png"
         subtitle: "Add TV"
         tag: "media"
-        url: "http://192.168.2.151:8989"
+        url: "http://sonarr.home.arpa"
         target: "_blank"
 
-  - name: "Infrastructure"
+  - name: "Networking"
     items:
       - name: "Router"
         logo: "assets/png/asus-router.png"
         subtitle: "Asus Router"
         tag: "management"
-        url: "http://192.168.2.1/Main_Login.asp"
+        url: "http://router.home.arpa"
         target: "_blank"
 
+      - name: "Pihole 1"
+        logo: "assets/png/pi-hole.png"
+        subtitle: "Pihole"
+        tag: "dns"
+        url: "http://pihole.home.arpa/admin"
+        target: "_blank"
+
+      - name: "Pihole 2"
+        logo: "assets/png/pi-hole.png"
+        subtitle: "Pihole"
+        tag: "dns"
+        url: "http://pihole2.home.arpa/admin"
+        target: "_blank"
+
+      - name: "nginx-proxy-manager"
+        logo: "assets/png/nginx-proxy-manager.png"
+        subtitle: "nginx-proxy-manager"
+        tag: "dns"
+        url: "http://192.168.2.151:81"
+        target: "_blank"
+
+  - name: "Storage/NAS"
+    items:
       - name: "Truenas"
         logo: "assets/png/truenas-scale.png"
         subtitle: "Manage Truenas"
@@ -38,25 +61,27 @@ services:
         url: "https://192.168.2.12:4443/ui/sessions/signin"
         target: "_blank"
 
+  - name: "Proxmox"
+    items:
       - name: "Proxmox PVE1"
         logo: "assets/png/proxmox.png"
         subtitle: "PVE1"
         tag: "management"
-        url: "https://192.168.2.178:8006"
+        url: "https://192.168.2.175:8006"
         target: "_blank"
 
       - name: "Proxmox PVE2"
         logo: "assets/png/proxmox.png"
         subtitle: "PVE2"
         tag: "management"
-        url: "https://192.168.2.175:8006"
+        url: "https://192.168.2.178:8006"
         target: "_blank"
 
-      - name: "Pihole"
-        #logo: "assets/png/proxmox.png"
-        subtitle: "Pihole"
+      - name: "Proxmox Backup Server"
+        logo: "assets/png/proxmox.png"
+        subtitle: "Backup Server"
         tag: "management"
-        url: "http://192.168.2.136/admin"
+        url: "https://192.168.2.179:8007"
         target: "_blank"
 
   - name: "Downloads"
@@ -68,14 +93,39 @@ services:
         url: "http://192.168.2.12:10095/"
         target: "_blank"
 
+      - name: "prowlarr"
+        logo: "assets/png/prowlarr.png"
+        subtitle: "Indexer"
+        tag: "Downloads"
+        url: "http://prowlarr.home.arpa"
+        target: "_blank"
+
+  - name: "Proton"
+    items:
+      - name: "Proton Mail"
+        logo: "assets/png/proton-mail.png"
+        subtitle: "Email"
+        tag: "Email"
+        url: "https://mail.protonmail.com/"
+        target: "_blank"
+
+      - name: "Proton Calendar"
+        logo: "assets/png/proton-calendar.png"
+        subtitle: "Calendar"
+        tag: "Calendar"
+        url: "https://calendar.protonmail.com/"
+        target: "_blank"
+
   - name: "Music"
     items:
       - name: "lidarr"
         logo: "assets/png/lidarr.png"
-        subtitle: "Listen to music"
+        subtitle: "Add to music"
         tag: "music"
-        url: "http://192.168.2.151:8686/"
+        url: "http://lidarr.home.arpa"
         target: "_blank"
+
+
 
 
   - name: "Useful"
