@@ -27,27 +27,53 @@ This configuration uses [agenix](https://github.com/ryantm/agenix) for managing 
 
 ### Setting up agenix
 
+1. Install agenix (already included in configuration.nix)
 
-1. Add your public key to the secrets configuration:
+2. Create a `secrets.nix` file to define who can decrypt which secrets:
    ```nix
-   let
-     user1 = "age1...";  # Your age public key
-     systems = {
-       nixos = "ssh-ed25519 AAAAC...";  # Your system's SSH host key
-     };
+   let 
+     # User SSH keys
+     user1 = "ssh-ed25519 AAAAC3..."; # Your SSH public key
+     users = [ user1 ];
+
+     # System SSH host keys
+     server1 = "ssh-ed25519 AAAAC3..."; # Your NixOS host key
+     systems = [ server1 ];
+
    in
    {
-     "secrets/cloudflare.age".publicKeys = [ user1 systems.nixos ];
+     # Define which keys can decrypt which secrets
+     "user-password.age".publicKeys = systems ++ users;
+     "caddy-basicauth.age".publicKeys = [ server1 ];
+     "cloudflare.age".publicKeys = systems ++ users;
    }
    ```
 
-3. Encrypt your secrets:
+3. Create your secrets:
    ```bash
+   # Cloudflare API token for ACME
    agenix -e secrets/cloudflare.age
+   # Add: CLOUDFLARE_DNS_API_TOKEN=your_token_here
+
+   # Basic auth for Caddy (if needed)
+   agenix -e secrets/caddy-basicauth.age
+   # Add your htpasswd format credentials
    ```
 
-Current secrets:
-- `cloudflare.age`: Contains Cloudflare API token for ACME DNS validation
+### Current Secrets
+- `cloudflare.age`: Cloudflare API token for ACME DNS validation
+- `caddy-basicauth.age`: Basic auth credentials for protected services
+- `user-password.age`: User password hashes
+
+### Finding Your Keys
+- Get your user's SSH public key:
+  ```bash
+  cat ~/.ssh/id_ed25519.pub
+  ```
+- Get your system's SSH host key:
+  ```bash
+  cat /etc/ssh/ssh_host_ed25519_key.pub
+  ```
 
 ## Services Proxied
 
