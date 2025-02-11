@@ -51,7 +51,7 @@ services:
         logo: "assets/png/truenas-scale.png"
         subtitle: "Manage Truenas"
         tag: "management"
-        url: "httpss://truenas.homelab.bloodstiller.com/ui/sessions/signin"
+        url: "https://truenas.homelab.bloodstiller.com/ui/sessions/signin"
         target: "_blank"
 
   - name: "Proxmox"
@@ -60,21 +60,21 @@ services:
         logo: "assets/png/proxmox.png"
         subtitle: "PVE1"
         tag: "management"
-        url: "httpss://pve1.homelab.bloodstiller.com"
+        url: "https://pve1.homelab.bloodstiller.com"
         target: "_blank"
 
       - name: "Proxmox PVE2"
         logo: "assets/png/proxmox.png"
         subtitle: "PVE2"
         tag: "management"
-        url: "httpss://pve2.homelab.bloodstiller.com"
+        url: "https://pve2.homelab.bloodstiller.com"
         target: "_blank"
 
       - name: "Proxmox Backup Server"
         logo: "assets/png/proxmox.png"
         subtitle: "Backup Server"
         tag: "management"
-        url: "httpss://pbs.homelab.bloodstiller.com"
+        url: "https://pbs.homelab.bloodstiller.com"
         target: "_blank"
 
   - name: "Downloads"
@@ -83,7 +83,7 @@ services:
         logo: "assets/png/qbittorrent.png"
         subtitle: "Download Client"
         tag: "Downloads"
-        url: "httpss://qbitorrent.homelab.bloodstiller.com"
+        url: "https://qbitorrent.homelab.bloodstiller.com"
         target: "_blank"
 
       - name: "prowlarr"
@@ -99,14 +99,14 @@ services:
         logo: "assets/png/proton-mail.png"
         subtitle: "Email"
         tag: "Email"
-        url: "httpss://mail.protonmail.com/"
+        url: "https://mail.protonmail.com/"
         target: "_blank"
 
       - name: "Proton Calendar"
         logo: "assets/png/proton-calendar.png"
         subtitle: "Calendar"
         tag: "Calendar"
-        url: "httpss://calendar.protonmail.com/"
+        url: "https://calendar.protonmail.com/"
         target: "_blank"
 
   - name: "Music"
@@ -115,7 +115,7 @@ services:
         logo: "assets/png/lidarr.png"
         subtitle: "Add to music"
         tag: "music"
-        url: "httpss://lidarr.homelab.bloodstiller.com"
+        url: "https://lidarr.homelab.bloodstiller.com"
         target: "_blank"
 
 
@@ -127,21 +127,21 @@ services:
         logo: "assets/png/whatsapp.png"
         subtitle: "Talk"
         tag: "Useful"
-        url: "httpss://web.whatsapp.com/"
+        url: "https://web.whatsapp.com/"
         target: "_blank"
 
       - name: "Amazon"
         logo: "assets/png/amazon.png"
         subtitle: "Buy"
         tag: "Useful"
-        url: "httpss://www.amazon.co.uk/"
+        url: "https://www.amazon.co.uk/"
         target: "_blank"
 
       - name: "GitHub"
         logo: "assets/png/github.png"
         subtitle: "push"
         tag: "Useful"
-        url: "httpss://github.com/"
+        url: "https://github.com/"
         target: "_blank"
 defaults:
   layout: list # Either 'columns', or 'list'
