@@ -8,11 +8,11 @@ services:
       - PGID=1000
       - TZ=Europe/London
     volumes:
-      - type: volume
-        source: tv
+      - type: bind
+        source: /mnt/media/tv
         target: /tv
-      - type: volume
-        source: downloads
+      - type: bind
+        source: /mnt/media/downloads
         target: /downloads
       - ./dockerConfigs/sonarr:/config
     ports:
@@ -27,11 +27,11 @@ services:
       - PGID=1000
       - TZ=Europe/London
     volumes:
-      - type: volume
-        source: movies
+      - type: bind
+        source: /mnt/media/movies
         target: /movies
-      - type: volume
-        source: downloads
+      - type: bind
+        source: /mnt/media/downloads
         target: /downloads
       - ./dockerConfigs/radarr:/config
     ports:
@@ -46,11 +46,11 @@ services:
       - PGID=1000
       - TZ=Europe/London
     volumes:
-      - type: volume
-        source: music
+      - type: bind
+        source: /mnt/media/music
         target: /music
-      - type: volume
-        source: downloads
+      - type: bind
+        source: /mnt/media/downloads
         target: /downloads
       - ./dockerConfigs/lidarr:/config
     ports:
@@ -90,7 +90,6 @@ services:
       - ./dockerConfigs/homer/custom.css:/www/assets/custom.css #Custom CSS
       - ./dockerConfigs/homer/dracula-background.png:/www/assets/dracula-background.png #Dracula Background
       - ./submodules/dashboard-icons/png:/www/assets/png #Icons
-
     ports:
       - 8080:8080
     user: 1000:1000 # default
@@ -101,38 +100,3 @@ services:
       - TZ=Europe/London
     restart: unless-stopped
 
-  nginx-proxy-manager:
-    image: 'docker.io/jc21/nginx-proxy-manager:latest'
-    container_name: nginx-proxy-manager
-    restart: unless-stopped
-    ports:
-        - '80:80'
-        - '81:81'
-        - '443:443'
-    volumes:
-        - ./dockerConfigs/nginx-proxy-manager/data:/data
-        - ./dockerConfigs/nginx-proxy-manager/letsencrypt:/etc/letsencrypt
-
-
-
-volumes:
-  movies:
-    driver_opts:
-      type: "nfs"
-      o: "addr=192.168.2.12,nolock,soft,rw"
-      device: ":/mnt/MasterPool/Media/Movies"
-  tv:
-    driver_opts:
-      type: "nfs"
-      o: "addr=192.168.2.12,nolock,soft,rw"
-      device: ":/mnt/MasterPool/Media/TV"
-  music:
-    driver_opts:
-      type: "nfs"
-      o: "addr=192.168.2.12,nolock,soft,rw"
-      device: ":/mnt/MasterPool/Media/Music"
-  downloads:
-    driver_opts:
-      type: "nfs"
-      o: "addr=192.168.2.12,nolock,soft,rw"
-      device: ":/mnt/MasterPool/Media/Downloads"

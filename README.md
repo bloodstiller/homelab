@@ -2,6 +2,15 @@
 
 This repository contains the configuration files for my personal homelab setup, primarily focused on media management and monitoring.
 
+### NixOS Configuration
+This homelab now runs on NixOS with the following key features:
+- Caddy for reverse proxy (running directly on host)
+- Let's Encrypt certificate management via Cloudflare DNS
+- Secret management with agenix
+- Automated system configuration through Nix
+
+For detailed NixOS-specific configuration, see [NixOS Configuration](./nix/README.md).
+
 ## Services
 
 ### Media Management
@@ -11,15 +20,14 @@ This repository contains the configuration files for my personal homelab setup, 
 - **Prowlarr** (Port 9696) - Indexer manager/proxy - [LinuxServer.io docs](https://docs.linuxserver.io/images/docker-prowlarr/)
 
 ### Reverse Proxy & SSL
-- **Nginx Proxy Manager** (Ports 80, 81, 443) - Manages SSL certificates and reverse proxy
-  - Provides local SSL certificates for all services
+- **Caddy** (Ports 80, 443) - Manages SSL certificates and reverse proxy
+  - Provides Let's Encrypt certificates via Cloudflare DNS validation
   - Uses wildcard certificate for *.homelab.bloodstiller.com
-  - Admin interface available on port 81
-  - Handles all HTTP/HTTPS traffic on ports 80/443
+  - Handles all HTTP/HTTPS traffic
+  - Configured directly on the NixOS host
 
 ### Dashboard
 - **Homer** (Port 8080) - A modern and minimalist dashboard
-- More information further down in the README
 
 ## Container Images
 
@@ -28,8 +36,6 @@ All media management services use official LinuxServer.io images:
 - `lscr.io/linuxserver/radarr:latest`
 - `lscr.io/linuxserver/lidarr:latest`
 - `lscr.io/linuxserver/prowlarr:latest`
-
-- I would not usually use the latest version of the image, but I am using the latest version for this project as linuxserver.io images are well maintained and have a good community support.
 
 ## Volume Configuration
 
@@ -59,54 +65,16 @@ The Docker data is stored on a dedicated virtual disk that is:
   ```
 
 ### Docker Storage Configuration
-To configure Docker to use the dedicated storage disk:
+Docker storage location is now configured directly in the NixOS configuration file (`configuration.nix`):
 
-1. Stop Docker services:
-   ```bash
-   sudo systemctl stop docker.service
-   sudo systemctl stop docker.socket
-   ```
-
-2. Create Docker configuration directory:
-   ```bash
-   sudo mkdir -p /mnt/docker
-   ```
-
-3. If migrating existing Docker data, copy it to the new location:
-   ```bash
-   sudo rsync -aP /var/lib/docker/ /mnt/docker/
-   ```
-   This command:
-   - Preserves all permissions and attributes (-a)
-   - Shows progress during transfer (-P)
-   - Copies all existing Docker data to the new location
-
-4. Update Docker's configuration to use the new location:
-   ```bash
-   sudo nano /etc/docker/daemon.json
-   ```
-   Add:
-   ```json
-   {
-      "data-root": "/mnt/docker"
-   }
-   ```
-
-5. Start Docker services:
-   ```bash
-   sudo systemctl start docker.socket
-   sudo systemctl start docker.service
-   ```
-
-6. Verify the configuration:
-   ```bash
-   sudo docker info | grep "Docker Root Dir"
-   ```
-
-7. After confirming everything works, optionally remove the old Docker data:
-   ```bash
-   sudo rm -rf /var/lib/docker/
-   ```
+```nix
+virtualisation.docker = {
+  enable = true;
+  daemon.settings = {
+    "data-root" = "/mnt/docker";
+  };
+};
+```
 
 This configuration ensures:
 - Docker data is stored on a dedicated disk
@@ -133,9 +101,6 @@ This setup enables efficient backups through Proxmox Backup Server:
    ```bash
    docker compose up -d
    ```
-4. Access Nginx Proxy Manager on port 81 to configure:
-   - SSL certificates for *.homelab.bloodstiller.com
-   - Proxy hosts for each service
 
 The required directory structure will be created automatically:
 ```
@@ -144,13 +109,12 @@ The required directory structure will be created automatically:
 ├── radarr/
 ├── lidarr/
 ├── prowlarr/
-├── nginx-proxy-manager/
 └── homer/
 ```
 
 ## Notes
 - All services run with PUID=1000 and PGID=1000
-- Time zone is set to UTC by default
+- Time zone is set to Europe/London
 - Services use the 'unless-stopped' restart policy
 
 ## Commented Services
@@ -212,22 +176,17 @@ The dashboard is accessible on port 8080 and provides quick access to all homela
 ### Adding a New Service
 When adding a new service to your homelab, follow these steps to set up SSL and DNS:
 
-1. **Nginx Proxy Manager Configuration**
-   - Access Nginx Proxy Manager at port 81
-   - Add a new Proxy Host
-   - Select the existing wildcard Let's Encrypt SSL certificate (*.homelab.bloodstiller.com)
-   - Configure the proxy host with:
-     - Domain: service.homelab.bloodstiller.com
-     - Scheme: http
-     - Forward Hostname/IP: service-container-name
-     - Forward Port: container-exposed-port
+1. **Caddy Configuration**
+   - Update the Caddy configuration in NixOS configuration.nix
+   - Add a new virtual host block for your service
+   - The wildcard certificate will automatically be used
 
 2. **Pihole DNS Configuration**
    - Access Pihole admin interface
    - Add a new Local DNS record:
      - Domain: service.homelab.bloodstiller.com
-     - IP Address: [Nginx Proxy Manager host IP]
+     - IP Address: [Caddy host IP]
 
 3. **Update Homer Dashboard**
    - Add the new service to `dockerConfigs/homer/config.yml`
-   - Use the HTTPS URL format: `https://service.homelab.bloodstiller.com`
+   - Use the HTTPS URL format: `https://[service-name].homelab.bloodstiller.com`
