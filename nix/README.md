@@ -155,3 +155,77 @@ etc.....
 - Docker data is stored in `/mnt/docker`
 - All services use a wildcard certificate for `*.homelab.bloodstiller.com`
 - Self-signed certificates for internal services (Proxmox, TrueNAS) are ignored by the reverse proxy. 
+
+## Repository Structure
+
+```
+~/nixos-config/
+├── README.md
+├── configuration.nix
+├── hardware-configuration.nix
+├── secrets/
+│   ├── cloudflare.age
+│   ├── caddy-basicauth.age
+│   └── user-password.age
+└── secrets.nix
+```
+
+### Managing Secrets
+
+1. Create a sync script in your repository:
+   ```bash
+   #!/bin/bash
+   # sync-secrets.sh
+
+   # Ensure secrets directory exists
+   mkdir -p ~/nixos-config/secrets
+
+   # Sync .age files from /etc/secrets to repo
+   cp /etc/secrets/*.age ~/nixos-config/secrets/
+
+   # Optional: Show what changed
+   echo "Updated secrets:"
+   ls -la ~/nixos-config/secrets/
+   ```
+
+2. Make it executable:
+   ```bash
+   chmod +x sync-secrets.sh
+   ```
+
+3. Use the script before pushing changes:
+   ```bash
+   ./sync-secrets.sh
+   git add secrets/*.age
+   git commit -m "update: sync secrets"
+   git push
+   ```
+
+### Deploying to a New System
+
+1. Clone your repository:
+   ```bash
+   git clone https://github.com/bloodstiller/homelab.git
+   ```
+
+2. Copy configuration to NixOS:
+   ```bash
+   sudo cp nixos-config/configuration.nix /etc/nixos/
+   sudo cp -r nixos-config/secrets /etc/
+   ```
+
+3. Rebuild NixOS:
+   ```bash
+   sudo nixos-rebuild switch
+   ```
+
+### Git Configuration
+
+Add to your .gitignore:
+```gitignore
+hardware-configuration.nix
+/result
+sync-secrets.sh  # Optional: if you want to customize the script per clone
+```
+
+The .age files are safe to commit to Git as they're encrypted and can only be decrypted by authorized keys. 
