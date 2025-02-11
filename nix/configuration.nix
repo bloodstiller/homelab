@@ -73,6 +73,7 @@
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    acl
     wget
     git
     nfs-utils
@@ -95,6 +96,23 @@
       "data-root" = "/mnt/docker";
     };
   };
+
+  # Add ACL support to the system
+  boot.supportedFilesystems = [ "acl" ];
+
+
+  # Set up ACLs for /mnt/docker after mounting
+  system.activationScripts.dockerPermissions = {
+    deps = [ "users" "groups" ];
+    text = let
+      setfacl = "${pkgs.acl}/bin/setfacl";
+    in ''
+      echo "Setting up permissions for /mnt/docker"
+      ${setfacl} -R -m u:martin:rwx /mnt/docker || true
+      ${setfacl} -R -d -m u:martin:rwx /mnt/docker || true
+    '';
+  };
+
 
   # Allow rootless Docker to bind to privileged ports
   boot.kernel.sysctl = {
@@ -334,3 +352,4 @@
     '';
   };
 }
+

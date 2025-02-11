@@ -20,6 +20,38 @@ This NixOS configuration sets up:
 - TrueNAS or similar NAS for media storage
 - Pi-hole for local DNS management
 - Age key pair for secrets management
+- Docker (configured to store data in /mnt/docker)
+
+## System Configuration
+
+### User Setup
+- Default user 'martin' is created with:
+  - Automatic login enabled
+  - Member of networkmanager, wheel, and docker groups
+  - SSH key access configured
+  - Sudo privileges (via wheel group)
+
+### System Settings
+- Timezone: Europe/London
+- Locale: en_GB.UTF-8
+- Keyboard: US layout for X11, UK layout for console
+- GRUB bootloader on /dev/sda with OS probing enabled
+- ACL support enabled for filesystems
+
+### Docker Configuration
+- Data directory: /mnt/docker
+- ACL permissions automatically set for user 'martin'
+- Rootless Docker support with privileged port binding
+- Custom data root location in /mnt/docker
+
+### Network Configuration
+- NetworkManager enabled
+- Hostname: nixos
+- Firewall configured with the following ports:
+  ```
+  TCP: 80, 443, 2049, 7878, 8080, 8191, 8686, 8989, 9696
+  UDP: 2049
+  ```
 
 ## Secret Management
 
@@ -159,10 +191,11 @@ etc.....
 ## Repository Structure
 
 ```
-~/nixos-config/
+/nix/
 ├── README.md
 ├── configuration.nix
 ├── hardware-configuration.nix
+├── sync.sh
 ├── secrets/
 │   ├── cloudflare.age
 │   ├── caddy-basicauth.age
@@ -170,62 +203,27 @@ etc.....
 └── secrets.nix
 ```
 
-### Managing Secrets
+### Managing Secrets and Configuration
 
-1. Create a sync script in your repository:
-   ```bash
-   #!/bin/bash
-   # sync-secrets.sh
+The repository includes a sync script (`sync.sh`) that helps keep your repository in sync with the system configuration:
 
-   # Ensure secrets directory exists
-   mkdir -p ~/nixos-config/secrets
+```bash
+./sync.sh
+```
 
-   # Sync .age files from /etc/secrets to repo
-   cp /etc/secrets/*.age ~/nixos-config/secrets/
+This script will:
+- Sync all `.age` files from `/etc/secrets` to the `secrets/` directory
+- Copy `hardware-configuration.nix` from the system
+- Copy `configuration.nix` from the system
+- Display what files were updated
 
-   # Optional: Show what changed
-   echo "Updated secrets:"
-   ls -la ~/nixos-config/secrets/
-   ```
-
-2. Make it executable:
-   ```bash
-   chmod +x sync-secrets.sh
-   ```
-
-3. Use the script before pushing changes:
-   ```bash
-   ./sync-secrets.sh
-   git add secrets/*.age
-   git commit -m "update: sync secrets"
-   git push
-   ```
-
-### Deploying to a New System
-
-1. Clone your repository:
-   ```bash
-   git clone https://github.com/bloodstiller/homelab.git
-   ```
-
-2. Copy configuration to NixOS:
-   ```bash
-   sudo cp nixos-config/configuration.nix /etc/nixos/
-   sudo cp -r nixos-config/secrets /etc/
-   ```
-
-3. Rebuild NixOS:
-   ```bash
-   sudo nixos-rebuild switch
-   ```
+Run this script before committing changes to ensure your repository stays up to date.
 
 ### Git Configuration
 
 Add to your .gitignore:
 ```gitignore
-hardware-configuration.nix
 /result
-sync-secrets.sh  # Optional: if you want to customize the script per clone
 ```
 
-The .age files are safe to commit to Git as they're encrypted and can only be decrypted by authorized keys. 
+The .age files are safe to commit to Git as they're encrypted and can only be decrypted by authorized keys.
