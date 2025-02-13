@@ -91,7 +91,7 @@ services:
       - ./dockerConfigs/homer/dracula-background.png:/www/assets/dracula-background.png #Dracula Background
       - ./submodules/dashboard-icons/png:/www/assets/png #Icons
     ports:
-      - 8080:8080
+      - 8888:8080
     user: 1000:1000 # default
     environment:
       - INIT_ASSETS=1 # default, requires the config directory to be writable for the container user (see user option)
@@ -100,3 +100,40 @@ services:
       - TZ=Europe/London
     restart: unless-stopped
 
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./dockerConfigs/gluetun:/gluetun
+    ports:
+      - 8080:8080    # qBittorrent WebUI (mapped from internal 8080 to external 10095)
+      - 6881:6881    # qBittorrent TCP
+      - 6881:6881/udp # qBittorrent UDP
+    environment:
+       - VPN_SERVICE_PROVIDER=private internet access
+       - OPENVPN_USER=${OPENVPN_USER}
+       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+       - SERVER_REGIONS=U   # Changed from Netherlands to UK London
+       - PUID=1000
+       - PGID=1000
+       - TZ=Europe/London
+
+  qbitorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - WEBUI_PORT=8080
+    volumes:
+      - ./dockerConfigs/qbitorrent:/config
+      - type: bind
+        source: /mnt/media/downloads
+        target: /downloads
+    restart: unless-stopped

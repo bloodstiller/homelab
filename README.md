@@ -52,7 +52,8 @@ All media is stored on TrueNas Scale server using an NFS server (192.168.2.12) w
 
 ### Remote Services
 - **TrueNAS** - Media storage server (port 4443)
-- **qBittorrent** - Torrent client (port 10095)
+- **qBittorrent** - Torrent client (port 8080)
+- **Gluetun** - VPN client. 
 - **Proxmox VE 1** - Virtualization server (port 8006)
 - **Proxmox VE 2** - Secondary virtualization server (port 8006)
 - **Proxmox Backup Server** - Backup management (port 8007)
@@ -69,7 +70,27 @@ All media is stored on TrueNas Scale server using an NFS server (192.168.2.12) w
   - Handles all HTTP/HTTPS traffic
 
 ### Dashboard
-- **Homer** (Port 8080) - A modern and minimalist dashboard
+- **Homer** (Port 8888) - A modern and minimalist dashboard
+
+### Download & VPN Services
+- **Gluetun** - VPN client container
+  - Provides VPN connectivity through Private Internet Access
+  - All qBittorrent traffic routed through VPN
+  - Credentials managed via `.env` file
+  - Configured for UK servers (London, Manchester)
+  - Server selection can be configured by:
+    ```bash
+    # List available servers
+    docker run --rm -v /mnt/docker/homelab/DockerConfigs/gluetun:/gluetun qmcgaw/gluetun format-servers -private-internet-access
+    
+    # Configure multiple servers in compose.yml using comma-separated values:
+    SERVER_REGIONS=UK London, UK Manchester
+    ```
+- **qBittorrent** (Port 8080) 
+  - Download client for all media services
+  - WebUI accessible through Gluetun's network
+  - All traffic routed through VPN for privacy
+  - Download directory mounted to `/mnt/media/downloads`
 
 ## Security Features
 
@@ -138,3 +159,69 @@ All mount points are created with 0755 permissions and owned by martin:martin:
   sudo setfacl -R -m u:martin:rwx /mnt/docker     # Set permissions
   sudo setfacl -R -d -m u:martin:rwx /mnt/docker  # Set default ACLs
   ```
+
+## Environment Configuration
+
+The stack requires a `.env` file in the root directory with the following variables:
+```env
+OPENVPN_USER=your_pia_username
+OPENVPN_PASSWORD=your_pia_password
+```
+
+These credentials are used by Gluetun to establish the VPN connection through Private Internet Access.
+
+## Network Architecture
+
+### VPN Configuration
+The download stack is configured for privacy:
+1. Gluetun container establishes VPN connection
+2. qBittorrent container uses Gluetun's network (`network_mode: "service:gluetun"`)
+3. All qBittorrent traffic (including WebUI) is routed through VPN
+4. WebUI remains accessible at `https://qbittorrent.homelab.bloodstiller.com`
+
+## Diagram:
+
+
+```
+                                                  ┌─────────────────┐
+                                                  │   Cloudflare    │
+                                                  │     (DNS)       │
+                                                  └────────┬────────┘
+                                                          │
+                                                          ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                                  NIXOS HOST                               │
+│                                                                           │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────────┐   │
+│   │    Caddy    │◄───│    Pihole   │    │        Docker Network       │   │
+│   │(Rev. Proxy) │    │ (Local DNS) │    │                             │   │
+│   └──────┬──────┘    └─────────────┘    │    ┌─────────┐ ┌─────────┐  │   │
+│          │                              │    │ Sonarr  │ │ Radarr  │  │   │
+│          │                              │    └─────────┘ └─────────┘  │   │
+│          │                              │    ┌─────────┐ ┌─────────┐  │   │
+│          │                              │    │ Lidarr  │ │ Prowlarr│  │   │
+│          │                              │    └─────────┘ └─────────┘  │   │
+│          │                              │    ┌─────────┐              │   │
+│          │                              │    │ Homer   │              │   │
+│          │                              │    └─────────┘              │   │
+│          │                              │                             │   │
+│          │                              │    ┌────────────────────┐   │   │
+│          │                              │    │      Gluetun       │   │   │
+│          │                              │    │    (VPN Client)    │   │   │
+│          │                              │    │   ┌────────────┐   │   │   │
+│          └──────────────────────────────┼────┼──►│qBittorrent │   │   │   │
+│                                         │    │   └────────────┘   │   │   │
+│                                         │    └─────────┬──────────┘   │   │
+│                                         └──────────────┼──────────────┘   │
+└─────────────────────────────────────────────────────┬──┼──────────────────┘
+                                                      │  │
+                                                      │  │
+┌──────────────────┐                                  │  │
+│   TrueNAS Scale  │◄─────────────────────────────────┘  │
+│   (NFS Server)   │                                     │
+└──────────────────┘                                     ▼
+                                                      Internet
+                                                     (via PIA)
+```
+
+

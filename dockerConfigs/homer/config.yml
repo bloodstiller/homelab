@@ -83,7 +83,7 @@ services:
         logo: "assets/png/qbittorrent.png"
         subtitle: "Download Client"
         tag: "Downloads"
-        url: "https://qbitorrent.homelab.bloodstiller.com"
+        url: "https://qbittorrent.homelab.bloodstiller.com"
         target: "_blank"
 
       - name: "prowlarr"
