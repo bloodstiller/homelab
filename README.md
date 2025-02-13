@@ -21,7 +21,6 @@ Docker data is stored on a dedicated virtual disk that is:
 - Mounted to `/mnt/docker` in the VM
 - Contains all Docker configuration data and persistent storage
 - ACL-managed for permissions:
-  - User `martin` has full rwx permissions
   - New files/directories inherit permissions automatically
 - Structured as follows:
   ```
@@ -32,7 +31,9 @@ Docker data is stored on a dedicated virtual disk that is:
           ├── radarr/
           ├── lidarr/
           ├── prowlarr/
-          └── homer/
+          ├── homer/
+          ├── qbitorrent/
+          └── gluetun/
   ```
 
 ### Media Storage
