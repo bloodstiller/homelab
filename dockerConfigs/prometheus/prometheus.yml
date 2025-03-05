@@ -1,0 +1,51 @@
+global:
+  evaluation_interval: 15s  # How frequently to evaluate rules
+  scrape_interval: 15s  # Default frequency for scraping targets
+
+rule_files:
+  - rules.yml  # Load alerting and recording rules from this file
+
+## Alertmanager configuration
+#alerting:
+#  alertmanagers:
+#    - static_configs:
+#        - targets:
+#         - promalertmanager:9093  # Alertmanager's address for sending alerts
+
+scrape_configs:
+  # Make Prometheus scrape itself for metrics.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['192.168.2.113:9090']  # Local endpoint for Prometheus itself
+
+ # Job for Node Exporter metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['192.168.2.113:9100']  # Using host IP and port
+
+ # Job for cAdvisor container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['192.168.2.113:8181']  # Using host IP and external mapped port
+
+ # Arch
+ # Job for Node Exporter metrics
+  - job_name: 'node-arch'
+    static_configs:
+      - targets: ['192.168.2.218:9100']  # Using host IP and port
+
+ # Job for cAdvisor container metrics
+  - job_name: 'cadvisor-arch'
+    static_configs:
+      - targets: ['192.168.2.218:8080']  # Using host IP and external mapped port
+
+ # Arch
+ # Job for Node Exporter metrics
+  - job_name: 'node-ubuntu'
+    static_configs:
+      - targets: ['192.168.2.147:9100']  # Using host IP and port
+
+ # Job for cAdvisor container metrics
+  - job_name: 'cadvisor-ubunut'
+    static_configs:
+      - targets: ['192.168.2.147:8080']  # Using host IP and external mapped port

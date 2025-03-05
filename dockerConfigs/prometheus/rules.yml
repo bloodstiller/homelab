@@ -1,0 +1,320 @@
+groups:
+  - name: Hardware Alerts
+    rules:
+      # Check instances avilable disk space:
+      - alert: DiskSpaceFree10Percent
+        expr: node_filesystem_free_percent <= 10
+        annotations:
+          title: "Instance [{{ $labels.instance }}]  has 10% or less Free disk space"
+          description: "[{{ $labels.instance }}]  has only {{ $value }}% or less free."
+        labels:
+          severity: 'warning'
+
+      - alert: InstanceDown
+        # Condition for alerting
+        expr: up == 0
+        for: 1m
+        # Annotation - additional informational labels to store more information
+        annotations:
+          title: 'Instance {{ $labels.instance }}  down'
+          description: '{{ $labels.instance }}  of job {{ $labels.job }} has been down for more than 1 minute.'
+        # Labels - additional labels to be attached to the alert
+        labels:
+          severity: 'critical'
+
+
+        # High CPU Usage Alert 70
+      - alert: InstanceHighCPUUsage70
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 70
+        for: 5m
+        annotations:
+          summary: "High CPU usage detected on {{ $labels.instance }} "
+          description: "CPU usage is above 70% on instance {{ $labels.instance }}  for the last 5 minutes."
+        labels:
+          severity: 'warning'
+
+        # High CPU Usage Alert 90
+      - alert: InstanceHighCPUUsage90
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 3m
+        annotations:
+          summary: "High CPU usage detected on {{ $labels.instance }} "
+          description: "CPU usage is above 90% on instance {{ $labels.instance }}  for the last 5 minutes."
+        labels:
+          severity: 'critical'
+
+      # High Memory Usage Alert 70% for Instance
+      - alert: InstancesMemoryUsage70
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 70
+        for: 5m
+        annotations:
+          summary: "High Memory usage detected on instance {{ $labels.instance }} "
+          description: "Memory usage is above 70% on instance {{ $labels.instance }}  for the last 5 minutes."
+        labels:
+          severity: 'warning'
+
+      # High Memory Usage Alert 90% for Instances
+      - alert: InstanceMemoryUsage90
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 1m
+        annotations:
+          summary: "Critically High Memory usage detected on instance {{ $labels.instance }} "
+          description: "Memory usage is above 90% on instance {{ $labels.instance }}  for the last 1 minutes."
+        labels:
+          severity: 'critical'
+
+      # High Disk Space Usage Alert 70%
+      - alert: InstanceHighDiskUsage70
+        expr: (1 - (node_filesystem_free_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 70
+        for: 5m
+        annotations:
+          summary: "High Disk usage detected on {{ $labels.instance }} "
+          description: "Disk usage is above 70% on instance {{ $labels.instance }}  for the last 5 minutes."
+        labels:
+          severity: 'warning'
+
+      # High Disk Space Usage Alert 90%
+      - alert: InstanceHighDiskUsage90
+        expr: (1 - (node_filesystem_free_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 90
+        for: 5m
+        annotations:
+          summary: "High Disk usage detected on {{ $labels.instance }} "
+          description: "Disk usage is above 90% on instance {{ $labels.instance }}  for the last 5 minutes."
+        labels:
+          severity: 'critical'
+
+      # Add this rule for disk prediction
+      - alert: DiskWillFillIn4Hours
+        expr: predict_linear(node_filesystem_free_bytes{fstype!~"tmpfs|overlay"}[1h], 4 * 3600) < 0
+        annotations:
+          title: "Disk {{ $labels.device }} on {{ $labels.instance }} will fill in 4 hours"
+          description: "Disk {{ $labels.device }} on {{ $labels.instance }} will fill in approximately 4 hours"
+        labels:
+          severity: 'warning'
+
+
+  - name: Prometheus Instance Alerts
+    rules:
+      # Prometheus instance has less than 30% storage left:
+      - alert: PrometheusDisksPaceLow30
+        expr: node_filesystem_free_percent{job="prometheus"} <= 30
+        annotations:
+          title: "Prometheus: Warning Prometheus Instance [{{ $labels.instance }}] has 30% or less Free disk space"
+          description: "[{{ $labels.instance }}] Prometheus has only {{ $value }}% or less free."
+        labels:
+          severity: 'warning'
+          component: 'prometheus'
+
+
+      # Prometheus instance has less than 10% storage left:
+      - alert: PrometheusDisksPaceLow10
+        expr: node_filesystem_free_percent{job="prometheus"} <= 10
+        annotations:
+          title: "Prometheus: Critical Prometheus Instance [{{ $labels.instance }}] has 10% or less Free disk space"
+          description: "[{{ $labels.instance }}] Prometheus has only {{ $value }}% or less free."
+        labels:
+          severity: 'critical'
+          component: 'prometheus'
+
+      # High CPU Usage Alert 70 for Prometheus
+      - alert: PrometheusCPUUsage70
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle", job="prometheus"}[5m])) * 100) > 70
+        for: 5m
+        annotations:
+          summary: "Prometheus: High CPU usage detected on Prometheus instance {{ $labels.instance }}"
+          description: "CPU usage is above 70% on Prometheus instance {{ $labels.instance }} for the last 5 minutes."
+        labels:
+          severity: 'warning'
+
+      # High CPU Usage Alert 90 for Prometheus
+      - alert: PrometheusCPUUsage90
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle", job="prometheus"}[5m])) * 100) > 90
+        for: 1m
+        annotations:
+          summary: "Prometheus: Critically high CPU usage detected on Prometheus instance {{ $labels.instance }}"
+          description: "CPU usage is above 90% on Prometheus instance {{ $labels.instance }} for the last 5 minutes."
+        labels:
+          severity: 'critical'
+
+      # High Memory Usage Alert 70% for Prometheus
+      - alert: PrometheusMemoryUsage70
+        expr: (1 - (node_memory_MemAvailable_bytes{job="prometheus"} / node_memory_MemTotal_bytes{job="prometheus"})) * 100 > 70
+        for: 5m
+        annotations:
+          summary: "Prometheus: High Memory usage detected on Prometheus instance {{ $labels.instance }}"
+          description: "Memory usage is above 70% on Prometheus instance {{ $labels.instance }} for the last 5 minutes."
+        labels:
+          severity: 'warning'
+
+      # High Memory Usage Alert 90% for Prometheus
+      - alert: PrometheusMemoryUsage90
+        expr: (1 - (node_memory_MemAvailable_bytes{job="prometheus"} / node_memory_MemTotal_bytes{job="prometheus"})) * 100 > 90
+        for: 1m
+        annotations:
+          summary: "Promteheus: Critically High Memory usage detected on Prometheus instance {{ $labels.instance }}"
+          description: "Memory usage is above 90% on Prometheus instance {{ $labels.instance }} for the last 5 minutes."
+        labels:
+          severity: 'critical'
+
+      # Prometheus Job Missing
+      - alert: PrometheusJobMissing
+        expr: 'absent(up{job="prometheus"})'
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus job missing (instance {{ $labels.instance }})
+          description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels.instance }}"
+
+
+      # Prometheus Target Missing
+      - alert: PrometheusTargetMissing
+        expr: 'up == 0'
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus target missing (instance {{ $labels.instance }})
+          description: "A Prometheus target has disappeared. An exporter might be crashed.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels.instance }}"
+
+      # Prometheus All Target Missing
+      - alert: PrometheusAllTargetsMissing
+        expr: 'sum by (job) (up) == 0'
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus all targets missing (instance {{ $labels.instance }})
+          description: "A Prometheus job does not have living target anymore.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels.instance }}"
+
+      # Prometheus Rules Failed Relaod
+      - alert: PrometheusConfigurationReloadFailure
+        expr: 'prometheus_config_last_reload_successful != 1'
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus configuration reload failure (instance {{ $labels.instance }})
+          description: "Prometheus configuration reload error\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus restarted too many times.
+      - alert: PrometheusTooManyRestarts
+        expr: 'changes(process_start_time_seconds{job=~"prometheus|pushgateway|alertmanager"}[15m]) > 2'
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus too many restarts (instance {{ $labels.instance }})
+          description: "Prometheus has restarted more than twice in the last 15 minutes. It might be crashlooping.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus AlertManager is missing
+      - alert: PrometheusAlertmanagerJobMissing
+        expr: absent(up{job="alertmanager"}) == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus AlertManager job missing (instance {{ $labels.instance }})
+          description: "A Prometheus AlertManager job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels.instance }}"
+
+      # Prometheus AlertManager failed to load config
+      - alert: PrometheusAlertmanagerConfigurationReloadFailure
+        expr: 'alertmanager_config_last_reload_successful != 1'
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus AlertManager configuration reload failure (instance {{ $labels.instance }})
+          description: "AlertManager configuration reload error\n  VALUE = {{ $value }}\n  LABELS = {{ $labels.instance }}"
+
+      # Prometheus AlertManager config not synced
+      - alert: PrometheusAlertmanagerConfigNotSynced
+        expr: 'count(count_values("config_hash", alertmanager_config_hash)) > 1'
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus AlertManager config not synced (instance {{ $labels.instance }})
+          description: "Configurations of AlertManager cluster instances are out of sync\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus AlertManager not connected
+      - alert: PrometheusNotConnectedToAlertmanager
+        expr: 'prometheus_notifications_alertmanagers_discovered < 1'
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus not connected to alertmanager (instance {{ $labels.instance }})
+          description: "Prometheus cannot connect the alertmanager\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus Rules are failing
+      - alert: PrometheusRuleEvaluationFailures
+        expr: 'increase(prometheus_rule_evaluation_failures_total[3m]) > 0'
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus rule evaluation failures (instance {{ $labels.instance }})
+          description: "Prometheus encountered {{ $value }} rule evaluation failures, leading to potentially ignored alerts.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus Rules are slow
+      - alert: PrometheusRuleEvaluationSlow
+        expr: 'prometheus_rule_group_last_duration_seconds > prometheus_rule_group_interval_seconds'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus rule evaluation slow (instance {{ $labels.instance }})
+          description: "Prometheus rule evaluation took more time than the scheduled interval. It indicates a slower storage backend access or too complex query.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus notifications queue is emtpy
+      - alert: PrometheusNotificationsBacklog
+        expr: 'min_over_time(prometheus_notifications_queue_length[10m]) > 0'
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus notifications backlog (instance {{ $labels.instance }})
+          description: "The Prometheus notification queue has not been empty for 10 minutes\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus alerts are failing
+      - alert: PrometheusAlertmanagerNotificationFailing
+        expr: 'rate(alertmanager_notifications_failed_total[1m]) > 0'
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus AlertManager notification failing (instance {{ $labels.instance }})
+          description: "Alertmanager is failing sending notifications\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus is pointed at an empty target
+      - alert: PrometheusTargetEmpty
+        expr: 'prometheus_sd_discovered_targets == 0'
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus target empty (instance {{ $labels.instance }})
+          description: "Prometheus has no target in service discovery\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus target is slow
+      - alert: PrometheusTargetScrapingSlow
+        expr: 'prometheus_target_interval_length_seconds{quantile="0.9"} / on (interval, instance, job) prometheus_target_interval_length_seconds{quantile="0.5"} > 1.05'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus target scraping slow (instance {{ $labels.instance }})
+          description: "Prometheus is scraping exporters slowly since it exceeded the requested interval time. Your Prometheus server is under-provisioned.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      # Prometheus has target scrapes that exceed limit
+      - alert: PrometheusLargeScrape
+        expr: 'increase(prometheus_target_scrapes_exceeded_sample_limit_total[10m]) > 10'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus large scrape (instance {{ $labels.instance }})
+          description: "Prometheus has many scrapes that exceed the sample limit\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+

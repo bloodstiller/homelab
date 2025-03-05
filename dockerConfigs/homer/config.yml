@@ -28,7 +28,7 @@ services:
         logo: "assets/png/asus-router.png"
         subtitle: "Asus Router"
         tag: "management"
-        url: "https://router.homelab.bloodstiller.com"
+        url: "https://asus.homelab.bloodstiller.com"
         target: "_blank"
 
       - name: "Pihole 1"
@@ -91,6 +91,29 @@ services:
         subtitle: "Indexer"
         tag: "Downloads"
         url: "https://prowlarr.homelab.bloodstiller.com"
+        target: "_blank"
+
+  - name: "Monitoring"
+    items:
+      - name: "Grafana"
+        logo: "assets/png/grafana.png"
+        subtitle: "Grafana"
+        tag: "Monitor"
+        url: "https://grafana.homelab.bloodstiller.com/"
+        target: "_blank"
+
+      - name: "Prometheus"
+        logo: "assets/png/prometheus.png"
+        subtitle: "Prometheus"
+        tag: "Monitor"
+        url: "https://prometheus.homelab.bloodstiller.com/"
+        target: "_blank"
+
+      - name: "Cadvisor"
+        logo: "assets/png/cadvisor.png"
+        subtitle: "cadvisor"
+        tag: "Monitor"
+        url: "https://cadvisor.homelab.bloodstiller.com/"
         target: "_blank"
 
   - name: "Proton"

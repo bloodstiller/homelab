@@ -177,9 +177,12 @@
       2049  # NFS
       7878  # Radarr
       8080  # Homer
+      8181  # Cadvisor
       8191  # Flaresolverr
       8686  # Lidarr
       8989  # Sonarr
+      9090  # Prometheus
+      9100  # Node Exporter
       9696  # Prowlarr
     ];
     allowedUDPPorts = [ 2049 ];  # For NFS
@@ -220,7 +223,7 @@
     
     # qBittorrent configuration
     virtualHosts."qbittorrent.homelab.bloodstiller.com".extraConfig = ''
-      reverse_proxy http://192.168.2.12:10095
+      reverse_proxy http://localhost:8080
       
       tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
         protocols tls1.3
@@ -241,7 +244,7 @@
     '';
 
     # Proxmox VE 1 configuration
-    virtualHosts."pve.homelab.bloodstiller.com".extraConfig = ''
+    virtualHosts."pve1.homelab.bloodstiller.com".extraConfig = ''
       reverse_proxy https://192.168.2.178:8006 {
         transport http {
           tls_insecure_skip_verify  # Required because Proxmox uses a self-signed cert internally
@@ -279,6 +282,14 @@
       }
     '';
 
+    # Plex configuration
+    virtualHosts."plex.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://192.168.2.12:32400 
+
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
     # ASUS router configuration
     virtualHosts."asus.homelab.bloodstiller.com".extraConfig = ''
       reverse_proxy http://192.168.2.1
@@ -308,7 +319,7 @@
 
     # Homer dashboard
     virtualHosts."homer.homelab.bloodstiller.com".extraConfig = ''
-      reverse_proxy http://localhost:8080
+      reverse_proxy http://localhost:8888
       
       tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
         protocols tls1.3
@@ -345,6 +356,42 @@
     # Radarr configuration
     virtualHosts."radarr.homelab.bloodstiller.com".extraConfig = ''
       reverse_proxy http://localhost:7878
+      
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
+
+    # Grafana 
+    virtualHosts."grafana.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://localhost:3000
+      
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
+
+    # Prometheus
+    virtualHosts."prometheus.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://localhost:9090
+      
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
+
+    # Node-Exporter
+    virtualHosts."node-exporter.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://localhost:9100
+      
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
+
+    # Cadvisor
+    virtualHosts."cadvisor.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://localhost:8181
       
       tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
         protocols tls1.3

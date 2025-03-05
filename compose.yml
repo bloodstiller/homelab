@@ -117,7 +117,7 @@ services:
        - VPN_SERVICE_PROVIDER=private internet access
        - OPENVPN_USER=${OPENVPN_USER}
        - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-       - SERVER_REGIONS=U   # Changed from Netherlands to UK London
+       - SERVER_REGIONS=UK London, UK Manchester   # Changed from Netherlands to UK London
        - PUID=1000
        - PGID=1000
        - TZ=Europe/London
@@ -137,3 +137,116 @@ services:
         source: /mnt/media/downloads
         target: /downloads
     restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: nix-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus
+    container_name: nix-prometheus
+    volumes:
+      - ./dockerConfigs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./dockerConfigs/prometheus:/etc/prometheus/:rw
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: nix-node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+    ports:
+      - 9100:9100
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  #alert-manager:
+    #image: prom/alertmanager
+    #volumes:
+      #- "./alertmanager.yml:/alertmanager/alertmanager.yml"
+    #ports:
+      #- 9093:9093
+
+  cadvisor:
+    container_name: nix-cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8181:8080"
+    volumes: 
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    user: root
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: nix-promtail
+    volumes:
+      - /var/log:/var/log
+      - ./dockerConfigs/promtail/promtail-config.yml:/etc/promtail/config.yml:rw
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nix-grafana
+    volumes: 
+      - ./dockerConfigs/grafana:/var/lib/grafana/:rw
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_FEATURE_TOGGLES_ENABLE=alertingSimplifiedRouting,alertingQueryAndExpressionsStepMode
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+        - name: Loki
+          type: loki
+          access: proxy
+          orgId: 1
+          url: http://loki:3100
+          basicAuth: false
+          isDefault: true
+          version: 1
+          editable: false
+        EOF
+        /run.sh
+    ports:
+      - "3000:3000"
+    user: "1000:100" 
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+

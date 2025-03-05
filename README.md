@@ -2,6 +2,35 @@
 
 This repository contains the configuration files for my personal homelab setup, primarily focused on media management and monitoring.
 
+## Table of Contents
+- [Homelab Configuration](#homelab-configuration)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Infrastructure](#infrastructure)
+    - [Storage](#storage)
+      - [Docker Data Storage](#docker-data-storage)
+      - [Media Storage](#media-storage)
+    - [Network Architecture](#network-architecture)
+      - [VPN Configuration](#vpn-configuration)
+  - [Services](#services)
+    - [Media Management](#media-management)
+    - [Remote Services](#remote-services)
+    - [System Services](#system-services)
+      - [Reverse Proxy \& SSL](#reverse-proxy--ssl)
+      - [Dashboard](#dashboard)
+    - [Monitoring Stack](#monitoring-stack)
+    - [Download \& VPN Services](#download--vpn-services)
+  - [Permission Management](#permission-management)
+    - [Mount Points](#mount-points)
+    - [Permission Management](#permission-management-1)
+    - [TrueNAS Scale Permission Management](#truenas-scale-permission-management)
+      - [Setting Permissions in TrueNAS SCALE](#setting-permissions-in-truenas-scale)
+        - [Via Web UI:](#via-web-ui)
+  - [Network Configuration](#network-configuration)
+  - [Security Features](#security-features)
+  - [Maintenance](#maintenance)
+  - [Diagram:](#diagram)
+
 ## Overview
 
 This homelab runs on NixOS with the following key features:
@@ -11,16 +40,20 @@ This homelab runs on NixOS with the following key features:
 - Automated system configuration through Nix
 - Docker-based media management services
 - ACL-based permission management
+- Comprehensive monitoring with Prometheus/Grafana stack
 
 For NixOS-specific configuration details, see [NixOS Configuration](./nix/README.md).
 
-## Infrastructure Setup
+## Infrastructure
 
-### Docker Data Storage
+### Storage
+
+#### Docker Data Storage
 Docker data is stored on a dedicated virtual disk that is:
 - Mounted to `/mnt/docker` in the VM
 - Contains all Docker configuration data and persistent storage
 - ACL-managed for permissions:
+  - User `martin` has full rwx permissions
   - New files/directories inherit permissions automatically
 - Structured as follows:
   ```
@@ -36,12 +69,21 @@ Docker data is stored on a dedicated virtual disk that is:
           └── gluetun/
   ```
 
-### Media Storage
+#### Media Storage
 All media is stored on TrueNas Scale server using an NFS server (192.168.2.12) with the following mount points:
 - `/mnt/MasterPool/Media/Movies` - Movie storage
 - `/mnt/MasterPool/Media/TV` - TV Shows storage
 - `/mnt/MasterPool/Media/Music` - Music storage
 - `/mnt/MasterPool/Media/Downloads` - Download directory
+
+### Network Architecture
+
+#### VPN Configuration
+The download stack is configured for privacy:
+1. Gluetun container establishes VPN connection
+2. qBittorrent container uses Gluetun's network (`network_mode: "service:gluetun"`)
+3. All qBittorrent traffic (including WebUI) is routed through VPN
+4. WebUI remains accessible at `https://qbittorrent.homelab.bloodstiller.com`
 
 ## Services
 
@@ -53,8 +95,6 @@ All media is stored on TrueNas Scale server using an NFS server (192.168.2.12) w
 
 ### Remote Services
 - **TrueNAS** - Media storage server (port 4443)
-- **qBittorrent** - Torrent client (port 8080)
-- **Gluetun** - VPN client. 
 - **Proxmox VE 1** - Virtualization server (port 8006)
 - **Proxmox VE 2** - Secondary virtualization server (port 8006)
 - **Proxmox Backup Server** - Backup management (port 8007)
@@ -63,15 +103,56 @@ All media is stored on TrueNas Scale server using an NFS server (192.168.2.12) w
 - **Pi-hole 2** - Secondary DNS server
 - **Flaresolverr** (Port 8191) - Cloudflare challenge solver
 
-### Reverse Proxy & SSL
+### System Services
+
+#### Reverse Proxy & SSL
 - **Caddy** (Ports 80, 443)
   - Manages SSL certificates and reverse proxy
   - Provides Let's Encrypt certificates via Cloudflare DNS
   - Uses wildcard certificate for *.homelab.bloodstiller.com
   - Handles all HTTP/HTTPS traffic
+  - Enforces TLS 1.3 for all connections
+  - Configured to handle self-signed certificates from internal services
 
-### Dashboard
+#### Dashboard
 - **Homer** (Port 8888) - A modern and minimalist dashboard
+
+### Monitoring Stack
+- **Prometheus** (Port 9090)
+  - Time-series database for metrics storage
+  - Central metrics collection point for all services
+  - Configurable alert rules and recording rules
+  - Accessible at `https://prometheus.homelab.bloodstiller.com`
+
+- **Grafana** (Port 3000)
+  - Feature-rich visualization platform
+  - Pre-configured with Loki datasource
+  - Accessible at `https://grafana.homelab.bloodstiller.com`
+  - Anonymous access enabled with Admin privileges for local use
+
+- **Loki** (Port 3100)
+  - Log aggregation system
+  - Collects logs from all system and container services
+  - Integrates with Grafana for log visualization
+  - Uses efficient log indexing and querying
+
+- **Promtail**
+  - Log collector agent for Loki
+  - Automatically discovers and scrapes container logs
+  - Forwards logs to Loki for storage
+  - Configured to add metadata and labels to logs
+
+- **Node Exporter** (Port 9100)
+  - Collects host-level metrics
+  - Exposes hardware and OS metrics for monitoring
+  - CPU, memory, disk, and network usage statistics
+  - Accessible at `https://node-exporter.homelab.bloodstiller.com`
+
+- **cAdvisor** (Port 8181)
+  - Container resource usage and performance metrics
+  - Real-time resource usage data for all Docker containers
+  - Helps identify resource bottlenecks
+  - Accessible at `https://cadvisor.homelab.bloodstiller.com`
 
 ### Download & VPN Services
 - **Gluetun** - VPN client container
@@ -87,69 +168,92 @@ All media is stored on TrueNas Scale server using an NFS server (192.168.2.12) w
     # Configure multiple servers in compose.yml using comma-separated values:
     SERVER_REGIONS=UK London, UK Manchester
     ```
-- **qBittorrent** (Port 8080) 
+- **qBittorrent** (Port 10095) 
   - Download client for all media services
   - WebUI accessible through Gluetun's network
   - All traffic routed through VPN for privacy
   - Download directory mounted to `/mnt/media/downloads`
 
-## Security Features
+## Permission Management
 
-- HTTPS for all services using Let's Encrypt certificates
-- Cloudflare DNS integration for ACME validation
-- SSH with ED25519 keys only
-- Firewall configuration for required services
-- TLS 1.3 enforced for all HTTPS connections
-- ACL-based permissions for Docker data directory
+### Mount Points
+All mount points are created with 775 permissions and owned by martin:martin:
+```
+/mnt/media/
+├── downloads/  # chmod 775 for Sonarr write access
+├── movies/     # chmod 775 for Radarr write access
+├── tv/         # chmod 775 for Sonarr write access
+└── music/      # chmod 775 for Lidarr write access
+```
 
-## Setup Instructions
+### Permission Management
+Media directories need 775 permissions to allow services to:
+- Read files (7 for owner)
+- Write/modify files (7 for group)
+- Read files for other users (5 for others)
 
-1. Clone this repository
-2. Ensure NFS server is accessible at 192.168.2.12
-3. Run the stack with:
-   ```bash
-   docker compose up -d
-   ```
+To fix permissions:
+```bash
+# Set ownership
+sudo chown -R martin:martin /mnt/media/*
 
-## Adding a New Service
-When adding a new service to your homelab, follow these steps:
+# Set directory permissions
+sudo chmod -R 775 /mnt/media/*
+```
 
-1. **Caddy Configuration**
-   - Update the Caddy configuration in NixOS configuration.nix
-   - Add a new virtual host block for your service
-   - The wildcard certificate will automatically be used
+### TrueNAS Scale Permission Management
 
-2. **Pihole DNS Configuration**
-   - Access Pihole admin interface
-   - Add a new Local DNS record:
-     - Domain: service.homelab.bloodstiller.com
-     - IP Address: [Caddy host IP]
+#### Setting Permissions in TrueNAS SCALE
 
-3. **Update Homer Dashboard**
-   - Add the new service to `dockerConfigs/homer/config.yml`
-   - Use the HTTPS URL format: `https://[service-name].homelab.bloodstiller.com`
+##### Via Web UI:
+1. Go to Datasets
+2. Select your Media dataset
+3. Click "Edit Permissions"
+4. Set:
+   - Owner: martin (1000)
+   - Group: martin (1000)
+   - Set permissions for User:
+     - Read ✓
+     - Write ✓
+     - Execute ✓
+   - Set permissions for Group:
+     - Read ✓
+     - Write ✓
+     - Execute ✓
+   - Set permissions for Others:
+     - Read ✓
+     - Execute ✓
+   - Check "Apply permissions recursively"
+   - Enable "Apply User"
+   - Enable "Apply Group"
+
+This creates the equivalent of 775 permissions:
+- User (owner): rwx (7)
+- Group: rwx (7)
+- Others: rx (5)
 
 ## Network Configuration
 - Hostname: nixos
 - Firewall enabled with the following ports:
   ```
-  TCP: 80, 443, 2049, 7878, 8080, 8191, 8686, 8989, 9696
+  TCP: 80, 443, 2049, 3000, 3100, 7878, 8080, 8181, 8191, 8686, 8989, 9090, 9100, 9696
   UDP: 2049 (NFS)
   ```
 - Network Manager enabled
 
-## Mount Points
-All mount points are created with 0755 permissions and owned by martin:martin:
-```
-/mnt/media/
-├── downloads/
-├── movies/
-├── tv/
-└── music/
-```
+## Security Features
+- HTTPS for all services using Let's Encrypt certificates
+- Cloudflare DNS integration for ACME validation
+  - Wildcard certificate for `*.homelab.bloodstiller.com`
+  - Automated certificate renewal
+  - All certificates managed by Caddy
+- SSH with ED25519 keys only
+- Firewall configuration for required services
+- TLS 1.3 enforced for all HTTPS connections
+- ACL-based permissions for Docker data directory
+- Secrets management with agenix (encrypted secrets in Git)
 
 ## Maintenance
-
 - Update system: `sudo nixos-rebuild switch`
 - View service logs: `journalctl -fu [service-name]`
 - Check Caddy status: `systemctl status caddy`
@@ -160,25 +264,8 @@ All mount points are created with 0755 permissions and owned by martin:martin:
   sudo setfacl -R -m u:martin:rwx /mnt/docker     # Set permissions
   sudo setfacl -R -d -m u:martin:rwx /mnt/docker  # Set default ACLs
   ```
-
-## Environment Configuration
-
-The stack requires a `.env` file in the root directory with the following variables:
-```env
-OPENVPN_USER=your_pia_username
-OPENVPN_PASSWORD=your_pia_password
-```
-
-These credentials are used by Gluetun to establish the VPN connection through Private Internet Access.
-
-## Network Architecture
-
-### VPN Configuration
-The download stack is configured for privacy:
-1. Gluetun container establishes VPN connection
-2. qBittorrent container uses Gluetun's network (`network_mode: "service:gluetun"`)
-3. All qBittorrent traffic (including WebUI) is routed through VPN
-4. WebUI remains accessible at `https://qbittorrent.homelab.bloodstiller.com`
+- Monitor container stats: `https://cadvisor.homelab.bloodstiller.com`
+- View system metrics: `https://grafana.homelab.bloodstiller.com`
 
 ## Diagram:
 
@@ -196,33 +283,41 @@ The download stack is configured for privacy:
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────────┐   │
 │   │    Caddy    │◄───│    Pihole   │    │        Docker Network       │   │
 │   │(Rev. Proxy) │    │ (Local DNS) │    │                             │   │
-│   └──────┬──────┘    └─────────────┘    │    ┌─────────┐ ┌─────────┐  │   │
-│          │                              │    │ Sonarr  │ │ Radarr  │  │   │
-│          │                              │    └─────────┘ └─────────┘  │   │
-│          │                              │    ┌─────────┐ ┌─────────┐  │   │
-│          │                              │    │ Lidarr  │ │ Prowlarr│  │   │
-│          │                              │    └─────────┘ └─────────┘  │   │
-│          │                              │    ┌─────────┐              │   │
-│          │                              │    │ Homer   │              │   │
-│          │                              │    └─────────┘              │   │
+│   └──────┬──────┘    └─────────────┘    │  ┌─────────┐  ┌─────────┐   │   │
+│          │                              │  │ Sonarr  │  │ Radarr  │   │   │
+│          │                              │  └─────────┘  └─────────┘   │   │
+│          │                              │  ┌─────────┐  ┌─────────┐   │   │
+│          │                              │  │ Lidarr  │  │ Prowlarr│   │   │
+│          │                              │  └─────────┘  └─────────┘   │   │
+│          │                              │  ┌─────────┐                │   │
+│          │                              │  │ Homer   │                │   │
+│          │                              │  └─────────┘                │   │
 │          │                              │                             │   │
-│          │                              │    ┌────────────────────┐   │   │
-│          │                              │    │      Gluetun       │   │   │
-│          │                              │    │    (VPN Client)    │   │   │
-│          │                              │    │   ┌────────────┐   │   │   │
-│          └──────────────────────────────┼────┼──►│qBittorrent │   │   │   │
-│                                         │    │   └────────────┘   │   │   │
-│                                         │    └─────────┬──────────┘   │   │
-│                                         └──────────────┼──────────────┘   │
-└─────────────────────────────────────────────────────┬──┼──────────────────┘
-                                                      │  │
-                                                      │  │
-┌──────────────────┐                                  │  │
-│   TrueNAS Scale  │◄─────────────────────────────────┘  │
-│   (NFS Server)   │                                     │
-└──────────────────┘                                     ▼
-                                                      Internet
-                                                     (via PIA)
+│          │                              │  ┌────────────────────┐     │   │
+│          │                              │  │      Gluetun       │     │   │
+│          │                              │  │    (VPN Client)    │     │   │
+│          │                              │  │   ┌────────────┐   │     │   │
+│          │                              │  │   │qBittorrent │   │     │   │
+│          │                              │  │   └────────────┘   │     │   │
+│          │                              │  └─────────┬──────────┘     │   │
+│          │                              │                             │   │
+│          │                              │  ┌─────────┐  ┌─────────┐   │   │
+│          │                              │  │Prometheus│  │ Grafana │  │   │
+│          │                              │  └─────────┘  └─────────┘   │   │
+│          │                              │  ┌─────────┐  ┌─────────┐   │   │
+│          │                              │  │  Loki   │  │Promtail │   │   │
+│          │                              │  └─────────┘  └─────────┘   │   │
+│          │                              │  ┌─────────┐  ┌─────────┐   │   │
+│          │                              │  │cAdvisor │  │Node-Exp.│   │   │
+│          │                              │  └─────────┘  └─────────┘   │   │
+│          │                              │                             │   │
+│          └──────────────────────────────┼─────────────────────────────┘   │
+└─────────────────────────────────────────┼─────────────────────────────────┘
+                                          │
+                                          │
+┌──────────────────┐                      │
+│   TrueNAS Scale  │◄─────────────────────┘
+│   (NFS Server)   │                     
+└──────────────────┘                     
 ```
-
 
