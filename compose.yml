@@ -168,6 +168,10 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     command:
+      - --path.rootfs=/host 
+      - --path.procfs=/host/proc 
+      - --path.sysfs=/host/sys 
+      - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker)($|/)
     ports:
       - 9100:9100
     restart: unless-stopped

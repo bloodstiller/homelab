@@ -19,6 +19,7 @@ This repository contains the configuration files for my personal homelab setup, 
       - [Reverse Proxy \& SSL](#reverse-proxy--ssl)
       - [Dashboard](#dashboard)
     - [Monitoring Stack](#monitoring-stack)
+      - [Remote Node Monitoring](#remote-node-monitoring)
     - [Download \& VPN Services](#download--vpn-services)
   - [Permission Management](#permission-management)
     - [Mount Points](#mount-points)
@@ -66,7 +67,12 @@ Docker data is stored on a dedicated virtual disk that is:
           ├── prowlarr/
           ├── homer/
           ├── qbitorrent/
-          └── gluetun/
+          ├── gluetun/
+          ├── prometheus/
+          ├── grafana/
+          ├── loki/
+          ├── promtail/
+          └── node-exporter/
   ```
 
 #### Media Storage
@@ -153,6 +159,85 @@ The download stack is configured for privacy:
   - Real-time resource usage data for all Docker containers
   - Helps identify resource bottlenecks
   - Accessible at `https://cadvisor.homelab.bloodstiller.com`
+
+#### Remote Node Monitoring
+
+The `Nodes` directory contains configuration for collecting metrics and logs from remote nodes (such as Raspberry Pis, VMs, or other servers) in your network. This integrates with your central Prometheus and Loki instances to provide a unified view of your entire homelab infrastructure.
+
+1. **Prerequisites**:
+   - Docker and Docker Compose installed on the remote node
+   - Network connectivity between the remote node and the central Prometheus/Loki server (192.168.2.113:3100)
+   - User with sudo/docker permissions
+
+2. **Setup Process**:
+   - Create a directory on the remote node:
+     ```bash
+     mkdir -p ~/monitoring
+     cd ~/monitoring
+     ```
+   
+   - Copy the configuration files from this repository:
+     ```bash
+     # Copy both files to the remote node
+     scp Nodes/compose.yml Nodes/promtail-config.yml user@remote-node:~/monitoring/
+     ```
+
+   - Modify the Promtail configuration on the remote node:
+     ```bash
+     # Edit the client URL if your Loki instance is different from 192.168.2.113:3100
+     nano ~/monitoring/promtail-config.yml
+     ```
+
+   - Customize the container names in compose.yml to reflect the node identity:
+     ```bash
+     # Example: change pi2-node to server1-node
+     nano ~/monitoring/compose.yml
+     ```
+
+   - Start the monitoring stack:
+     ```bash
+     cd ~/monitoring
+     docker compose up -d
+     ```
+
+3. **Verification**:
+   - Check that containers are running:
+     ```bash
+     docker ps
+     ```
+   
+   - Verify node-exporter metrics are available:
+     ```bash
+     curl http://localhost:9100/metrics
+     ```
+   
+   - Verify cAdvisor metrics are available:
+     ```bash
+     curl http://localhost:8080/metrics
+     ```
+
+4. **Configure Central Prometheus**:
+   - Add the remote node to your Prometheus scrape configuration (in `/mnt/docker/homelab/dockerConfigs/prometheus/prometheus.yml`):
+     ```yaml
+     - job_name: 'remote_node'
+       static_configs:
+         - targets: ['remote-node-ip:9100']
+           labels:
+             instance: 'remote-node-name'
+     
+     - job_name: 'remote_cadvisor'
+       static_configs:
+         - targets: ['remote-node-ip:8080']
+           labels:
+             instance: 'remote-node-name'
+     ```
+
+5. **Components**:
+   - **node-exporter**: Collects system metrics (CPU, memory, disk, network)
+   - **cAdvisor**: Collects container metrics
+   - **Promtail**: Collects and forwards logs to central Loki instance
+
+This setup enables centralized monitoring of all nodes in your homelab with minimal configuration overhead. The collected metrics and logs will appear in your Grafana dashboards alongside your main server data.
 
 ### Download & VPN Services
 - **Gluetun** - VPN client container
@@ -271,27 +356,27 @@ This creates the equivalent of 775 permissions:
 
 
 ```
-                                                  ┌─────────────────┐
-                                                  │   Cloudflare    │
-                                                  │     (DNS)       │
-                                                  └────────┬────────┘
+                                                  ┌────────────────┐
+                                                  │   Cloudflare   │
+                                                  │     (DNS)      │
+                                                  └───────┬────────┘
                                                           │
                                                           ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                                  NIXOS HOST                               │
 │                                                                           │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────────┐   │
-│   │    Caddy    │◄───│    Pihole   │    │        Docker Network       │   │
-│   │(Rev. Proxy) │    │ (Local DNS) │    │                             │   │
-│   └──────┬──────┘    └─────────────┘    │  ┌─────────┐  ┌─────────┐   │   │
-│          │                              │  │ Sonarr  │  │ Radarr  │   │   │
-│          │                              │  └─────────┘  └─────────┘   │   │
-│          │                              │  ┌─────────┐  ┌─────────┐   │   │
-│          │                              │  │ Lidarr  │  │ Prowlarr│   │   │
-│          │                              │  └─────────┘  └─────────┘   │   │
-│          │                              │  ┌─────────┐                │   │
-│          │                              │  │ Homer   │                │   │
-│          │                              │  └─────────┘                │   │
+│   │    Caddy    │◄───┤  Pihole 1   │    │        Docker Network       │   │
+│   │(Rev. Proxy) │    └─────────────┘    │                             │   │
+│   │             │    ┌─────────────┐    │  ┌───────────┐ ┌───────────┐│   │
+│   │             │◄───┤  Pihole 2   │    │  │  Sonarr   │ │  Radarr   ││   │
+│   └──────┬──────┘    └─────────────┘    │  └───────────┘ └───────────┘│   │
+│          │                              │  ┌───────────┐ ┌───────────┐│   │
+│          │                              │  │  Lidarr   │ │ Prowlarr  ││   │
+│          │                              │  └───────────┘ └───────────┘│   │
+│          │                              │  ┌───────────┐              │   │
+│          │                              │  │   Homer   │              │   │
+│          │                              │  └───────────┘              │   │
 │          │                              │                             │   │
 │          │                              │  ┌────────────────────┐     │   │
 │          │                              │  │      Gluetun       │     │   │
@@ -301,15 +386,15 @@ This creates the equivalent of 775 permissions:
 │          │                              │  │   └────────────┘   │     │   │
 │          │                              │  └─────────┬──────────┘     │   │
 │          │                              │                             │   │
-│          │                              │  ┌─────────┐  ┌─────────┐   │   │
-│          │                              │  │Prometheus│  │ Grafana │  │   │
-│          │                              │  └─────────┘  └─────────┘   │   │
-│          │                              │  ┌─────────┐  ┌─────────┐   │   │
-│          │                              │  │  Loki   │  │Promtail │   │   │
-│          │                              │  └─────────┘  └─────────┘   │   │
-│          │                              │  ┌─────────┐  ┌─────────┐   │   │
-│          │                              │  │cAdvisor │  │Node-Exp.│   │   │
-│          │                              │  └─────────┘  └─────────┘   │   │
+│          │                              │  ┌───────────┐ ┌───────────┐│   │
+│          │                              │  │Prometheus │ │  Grafana  ││   │
+│          │                              │  └───────────┘ └───────────┘│   │
+│          │                              │  ┌───────────┐ ┌───────────┐│   │
+│          │                              │  │   Loki    │ │ Promtail  ││   │
+│          │                              │  └───────────┘ └───────────┘│   │
+│          │                              │  ┌───────────┐ ┌───────────┐│   │
+│          │                              │  │ cAdvisor  │ │Node-Exp.  ││   │
+│          │                              │  └───────────┘ └───────────┘│   │
 │          │                              │                             │   │
 │          └──────────────────────────────┼─────────────────────────────┘   │
 └─────────────────────────────────────────┼─────────────────────────────────┘

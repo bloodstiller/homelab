@@ -1,0 +1,53 @@
+---
+services:
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: pi2-node
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.rootfs=/host 
+      - --path.procfs=/host/proc 
+      - --path.sysfs=/host/sys 
+      - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker)($|/)
+    ports:
+      - 9100:9100
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+
+  cadvisor:
+    container_name: pi2-cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    user: root
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: pi2-promtail
+    volumes:
+      - /var/log:/var/log
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
