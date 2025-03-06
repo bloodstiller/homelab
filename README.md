@@ -12,6 +12,10 @@ This repository contains the configuration files for my personal homelab setup, 
       - [Media Storage](#media-storage)
     - [Network Architecture](#network-architecture)
       - [VPN Configuration](#vpn-configuration)
+  - [System Configuration](#system-configuration)
+    - [User Setup](#user-setup)
+    - [System Settings](#system-settings)
+    - [Docker Configuration](#docker-configuration)
   - [Services](#services)
     - [Media Management](#media-management)
     - [Remote Services](#remote-services)
@@ -21,6 +25,10 @@ This repository contains the configuration files for my personal homelab setup, 
     - [Monitoring Stack](#monitoring-stack)
       - [Remote Node Monitoring](#remote-node-monitoring)
     - [Download \& VPN Services](#download--vpn-services)
+  - [Secret Management](#secret-management)
+    - [Setting up agenix](#setting-up-agenix)
+    - [Current Secrets](#current-secrets)
+    - [Finding Your Keys](#finding-your-keys)
   - [Permission Management](#permission-management)
     - [Mount Points](#mount-points)
     - [Permission Management](#permission-management-1)
@@ -29,6 +37,11 @@ This repository contains the configuration files for my personal homelab setup, 
         - [Via Web UI:](#via-web-ui)
   - [Network Configuration](#network-configuration)
   - [Security Features](#security-features)
+  - [Setup Instructions](#setup-instructions)
+    - [Required DNS Records](#required-dns-records)
+    - [Installation Steps](#installation-steps)
+  - [Repository Structure](#repository-structure)
+    - [Managing Secrets and Configuration](#managing-secrets-and-configuration)
   - [Maintenance](#maintenance)
   - [Diagram:](#diagram)
 
@@ -90,6 +103,28 @@ The download stack is configured for privacy:
 2. qBittorrent container uses Gluetun's network (`network_mode: "service:gluetun"`)
 3. All qBittorrent traffic (including WebUI) is routed through VPN
 4. WebUI remains accessible at `https://qbittorrent.homelab.bloodstiller.com`
+
+## System Configuration
+
+### User Setup
+- Default user 'martin' is created with:
+  - Automatic login enabled
+  - Member of networkmanager, wheel, and docker groups
+  - SSH key access configured
+  - Sudo privileges (via wheel group)
+
+### System Settings
+- Timezone: Europe/London
+- Locale: en_GB.UTF-8
+- Keyboard: US layout for X11, UK layout for console
+- GRUB bootloader on /dev/sda with OS probing enabled
+- ACL support enabled for filesystems
+
+### Docker Configuration
+- Data directory: /mnt/docker
+- ACL permissions automatically set for user 'martin'
+- Rootless Docker support with privileged port binding
+- Custom data root location in /mnt/docker
 
 ## Services
 
@@ -259,6 +294,60 @@ This setup enables centralized monitoring of all nodes in your homelab with mini
   - All traffic routed through VPN for privacy
   - Download directory mounted to `/mnt/media/downloads`
 
+## Secret Management
+
+This configuration uses [agenix](https://github.com/ryantm/agenix) for managing secrets. Secrets are encrypted with age and can only be decrypted by the host system and authorized users.
+
+### Setting up agenix
+
+1. Install agenix (already included in configuration.nix)
+
+2. Create a `secrets.nix` file to define who can decrypt which secrets:
+   ```nix
+   let 
+     # User SSH keys
+     user1 = "ssh-ed25519 AAAAC3..."; # Your SSH public key
+     users = [ user1 ];
+
+     # System SSH host keys
+     server1 = "ssh-ed25519 AAAAC3..."; # Your NixOS host key
+     systems = [ server1 ];
+
+   in
+   {
+     # Define which keys can decrypt which secrets
+     "user-password.age".publicKeys = systems ++ users;
+     "caddy-basicauth.age".publicKeys = [ server1 ];
+     "cloudflare.age".publicKeys = systems ++ users;
+   }
+   ```
+
+3. Create your secrets:
+   ```bash
+   # Cloudflare API token for ACME
+   agenix -e secrets/cloudflare.age
+   # Add: CLOUDFLARE_DNS_API_TOKEN=your_token_here
+
+   # Basic auth for Caddy (if needed)
+   agenix -e secrets/caddy-basicauth.age
+   # Add your htpasswd format credentials
+   ```
+
+### Current Secrets
+- `cloudflare.age`: Cloudflare API token for ACME DNS validation
+- `caddy-basicauth.age`: Basic auth credentials for protected services
+- `user-password.age`: User password hashes
+
+### Finding Your Keys
+- Get your user's SSH public key:
+  ```bash
+  cat ~/.ssh/id_ed25519.pub
+  ```
+- Get your system's SSH host key:
+  ```bash
+  cat /etc/ssh/ssh_host_ed25519_key.pub
+  ```
+
 ## Permission Management
 
 ### Mount Points
@@ -337,6 +426,80 @@ This creates the equivalent of 775 permissions:
 - TLS 1.3 enforced for all HTTPS connections
 - ACL-based permissions for Docker data directory
 - Secrets management with agenix (encrypted secrets in Git)
+
+## Setup Instructions
+
+### Required DNS Records
+
+Add the following A records to your DNS (via Pi-hole or Cloudflare):
+```
+homelab.bloodstiller.com
+*.homelab.bloodstiller.com
+
+pbs.homelab.bloodstiller.com
+pve.homelab.bloodstiller.com
+pve2.homelab.bloodstiller.com
+etc.....
+```
+
+### Installation Steps
+
+1. Install NixOS following the standard installation guide
+2. Clone this repository
+3. Create a Cloudflare API token with DNS management permissions
+4. Create the secrets file:
+   ```bash
+   agenix -e /etc/secrets/cloudflare.age
+   ```
+   Add your Cloudflare API token:
+   ```
+   CLOUDFLARE_DNS_API_TOKEN=your_token_here
+   ```
+5. Copy configuration.nix to `/etc/nixos/configuration.nix`
+6. Run:
+   ```bash
+   sudo nixos-rebuild switch
+   ```
+
+## Repository Structure
+
+```
+/
+├── README.md
+├── docker-compose.yml
+├── .env
+├── Nodes/
+│   ├── compose.yml
+│   └── promtail-config.yml
+└── nix/
+    ├── README.md
+    ├── configuration.nix
+    ├── hardware-configuration.nix
+    ├── sync.sh
+    ├── secrets/
+    │   ├── cloudflare.age
+    │   ├── caddy-basicauth.age
+    │   └── user-password.age
+    └── secrets.nix
+```
+
+### Managing Secrets and Configuration
+
+The repository includes a sync script (`nix/sync.sh`) that helps keep your repository in sync with the system configuration:
+
+```bash
+./nix/sync.sh
+```
+
+This script will:
+- Sync all `.age` files from `/etc/secrets` to the `nix/secrets/` directory
+- Copy `hardware-configuration.nix` from the system
+- Copy `configuration.nix` from the system
+- Display what files were updated
+
+Run this script before committing changes to ensure your repository stays up to date.
+
+The .age files are safe to commit to Git as they're encrypted and can only be decrypted by authorized keys.
 
 ## Maintenance
 - Update system: `sudo nixos-rebuild switch`
