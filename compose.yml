@@ -164,19 +164,22 @@ services:
     image: prom/node-exporter:latest
     container_name: nix-node-exporter
     volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
+      - /proc:/host/proc:ro,rslave
+      - /sys:/host/sys:ro,rslave
+      - /:/rootfs:ro,rslave
     command:
-      - --path.rootfs=/host 
-      - --path.procfs=/host/proc 
-      - --path.sysfs=/host/sys 
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
       - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker)($|/)
     ports:
       - 9100:9100
     restart: unless-stopped
+    privileged: true
+    user: root
     networks:
       - monitoring
+    
 
   #alert-manager:
     #image: prom/alertmanager
@@ -249,6 +252,28 @@ services:
     networks:
       - monitoring
 
+  navidrome:
+    image: deluan/navidrome:latest
+    user: 1000:100
+    privileged: true
+    ports:
+      - "4533:4533"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /mnt/media/music
+        target: /music
+      - ./dockerConfigs/navidrome:/data
+
+  picard:
+    image: mikenye/picard:latest
+    ports:
+      - "5800:5800"
+    volumes:
+      - type: bind
+        source: /mnt/media/music
+        target: /storage
+      - ./dockerConfigs/picard:/config
 networks:
   monitoring:
     driver: bridge

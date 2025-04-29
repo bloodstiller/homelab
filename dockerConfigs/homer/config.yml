@@ -22,6 +22,36 @@ services:
         url: "https://sonarr.homelab.bloodstiller.com"
         target: "_blank"
 
+  - name: "Music & podcasts"
+    items:
+      - name: "lidarr"
+        logo: "assets/png/lidarr.png"
+        subtitle: "Add to music"
+        tag: "music"
+        url: "https://lidarr.homelab.bloodstiller.com"
+        target: "_blank"
+
+      - name: "navidrome"
+        logo: "assets/png/navidrome.png"
+        subtitle: "Listen To Music"
+        tag: "music"
+        url: "https://navidrome.homelab.bloodstiller.com"
+        target: "_blank"
+
+      - name: "Pocketcasts"
+        logo: "assets/png/pocket-casts-dark.png"
+        subtitle: "Podcasts"
+        tag: "music"
+        url: "https://play.pocketcasts.com/podcasts"
+        target: "_blank"
+
+      - name: "MusicBrainz"
+        logo: "assets/png/musicbrainz.png"
+        subtitle: "organize"
+        tag: "music"
+        url: "https://musicbrainz.homelab.bloodstiller.com"
+        target: "_blank"
+
   - name: "Networking"
     items:
       - name: "Router"
@@ -131,18 +161,6 @@ services:
         tag: "Calendar"
         url: "https://calendar.protonmail.com/"
         target: "_blank"
-
-  - name: "Music"
-    items:
-      - name: "lidarr"
-        logo: "assets/png/lidarr.png"
-        subtitle: "Add to music"
-        tag: "music"
-        url: "https://lidarr.homelab.bloodstiller.com"
-        target: "_blank"
-
-
-
 
   - name: "Useful"
     items:

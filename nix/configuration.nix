@@ -175,6 +175,8 @@
       80    # caddy 
       443   # caddy https (if needed later)
       2049  # NFS
+      4533  # Navidrome
+      5800  # MusixBrainz
       7878  # Radarr
       8080  # Homer
       8181  # Cadvisor
@@ -392,6 +394,24 @@
     # Cadvisor
     virtualHosts."cadvisor.homelab.bloodstiller.com".extraConfig = ''
       reverse_proxy http://localhost:8181
+      
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
+
+    # Navidrome
+    virtualHosts."navidrome.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://localhost:4533
+      
+      tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
+        protocols tls1.3
+      }
+    '';
+
+    # Musicbrainz
+    virtualHosts."musicbrainz.homelab.bloodstiller.com".extraConfig = ''
+      reverse_proxy http://localhost:5800
       
       tls /var/lib/acme/homelab.bloodstiller.com/cert.pem /var/lib/acme/homelab.bloodstiller.com/key.pem {
         protocols tls1.3
