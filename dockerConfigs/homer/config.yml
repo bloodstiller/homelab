@@ -52,6 +52,18 @@ services:
         url: "https://musicbrainz.homelab.bloodstiller.com"
         target: "_blank"
 
+  - name: "Cloud"
+    items:
+      - name: "Nextcloud"
+        logo: "assets/png/nextcloud.png"
+        subtitle: "Personal Cloud"
+        tag: "cloud"
+        url: "https://nextcloud.homelab.bloodstiller.com"
+        target: "_blank"
+
+
+
+
   - name: "Networking"
     items:
       - name: "Router"
